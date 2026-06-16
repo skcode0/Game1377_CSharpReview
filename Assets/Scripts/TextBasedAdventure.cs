@@ -13,73 +13,67 @@ public class TextBasedAdventure : MonoBehaviour
         Teleporter
     }
 
-    //TODO: create struct
+    #nullable enable
+    private struct Tile
+    {
+        public string Name;
+        public TileType Type;
+        public string Description;
+        public bool isTileVisited;
+        public (int, int)? TeleportDestinationCoordinate; 
+    }
 
+    private Tile[,] dungeon =
+    {
+        {
+            new Tile { Name = "Dark Cave", Type = TileType.Empty, isTileVisited = false, Description = "A damp cave echoes with dripping water." },
+            new Tile { Name = "Mossy Tunnel", Type = TileType.Item, isTileVisited = false, Description = "Soft moss carpets the narrow tunnel floor." },
+            new Tile { Name = "Crystal Room", Type = TileType.Empty, isTileVisited = false, Description = "Glittering crystals reflect dancing light." },
+            new Tile { Name = "Frozen Lake", Type = TileType.Teleporter, isTileVisited = false, Description = "A frozen lake stretches into the darkness.", TeleportDestinationCoordinate = (3,2) }
+        },
+        {
+            new Tile { Name = "Bone Chamber", Type = TileType.Enemy, isTileVisited = false, Description = "Ancient bones litter the chamber." },
+            new Tile { Name = "Flooded Hall", Type = TileType.Teleporter, isTileVisited = false, Description = "Cold water floods the abandoned hall.", TeleportDestinationCoordinate = (3,0) },
+            new Tile { Name = "Iron Gate", Type = TileType.Blockade, isTileVisited = false, Description = "A rusted iron gate blocks the path." },
+            new Tile { Name = "Green Meadow", Type = TileType.Exit, isTileVisited = false, Description = "Unexpected wildflowers sway in the meadow." }
+        },
+        {
+            new Tile { Name = "Goblin Den", Type = TileType.Blockade, isTileVisited = false, Description = "Crude goblin markings cover the walls." },
+            new Tile { Name = "Armory", Type = TileType.Empty, isTileVisited = false, Description = "Dusty piles of weapons remain in the unlit armory." },
+            new Tile { Name = "Throne Room", Type = TileType.Enemy, isTileVisited = false, Description = "A forgotten throne sits in silence." },
+            new Tile { Name = "Poison Swamp", Type = TileType.Item, isTileVisited = false, Description = "Thick fumes rise from the poisonous swamp." }
+        },
+        {
+            new Tile { Name = "City Ruins", Type = TileType.Teleporter, isTileVisited = false, Description = "Ruined buildings hint at a lost civilization.", TeleportDestinationCoordinate = (1,1) },
+            new Tile { Name = "Bottomless Pit", Type = TileType.Empty, isTileVisited = false, Description = "The pit descends beyond sight." },
+            new Tile { Name = "Ancient Forest", Type = TileType.Teleporter, isTileVisited = false, Description = "Massive trees surround the ancient forest.", TeleportDestinationCoordinate = (0,3) },
+            new Tile { Name = "Rotting Catacomb", Type = TileType.Item, isTileVisited = false, Description = "The catacomb reeks of decay and death." }
+        },
+    };
 
-    private string[,] tileNames = { { "Dark Cave", "Mossy Tunnel", "Crystal Room", "Frozen Lake" },
-                                    { "Bone Chamber", "Flooded Hall", "Iron Gate", "Green Meadow" },
-                                    { "Goblin Den", "Armory", "Throne Room", "Poison Swamp" },
-                                    { "City Ruins","Bottomless Pit", "Ancient Forest", "Rotting Catacomb" }
-                                  };
-
-    private TileType[,] tileTypes = {   { TileType.Empty, TileType.Item,  TileType.Empty, TileType.Teleporter},
-                                        { TileType.Enemy, TileType.Teleporter, TileType.Blockade, TileType.Exit },
-                                        { TileType.Blockade, TileType.Empty, TileType.Enemy, TileType.Item },
-                                        { TileType.Teleporter, TileType.Empty, TileType.Teleporter, TileType.Item }
-                                    };
-
-    private string[,] tileDescriptions = {
-                                                {
-                                                    "A damp cave echoes with dripping water.",
-                                                    "Soft moss carpets the narrow tunnel floor.",
-                                                    "Glittering crystals reflect dancing light.",
-                                                    "A frozen lake stretches into the darkness."
-                                                },
-                                                {
-                                                    "Ancient bones litter the chamber.",
-                                                    "Cold water floods the abandoned hall.",
-                                                    "A rusted iron gate blocks the path.",
-                                                    "Unexpected wildflowers sway in the meadow."
-                                                },
-                                                {
-                                                    "Crude goblin markings cover the walls.",
-                                                    "Dusty piles of weapons remain in the unlit armory.",
-                                                    "A forgotten throne sits in silence.",
-                                                    "Thick fumes rise from the poisonous swamp."
-                                                },
-                                                {
-                                                    "Ruined buildings hint at a lost civilization.",
-                                                    "The pit descends beyond sight.",
-                                                    "Massive trees surround the ancient forest.",
-                                                    "The catacomb reeks of decay and death."
-                                                }
-                                         };
-
-    private bool[,] isRoomVisited = {
-                                    { false, false, false, false },
-                                    { false, false, false, false },
-                                    { false, false, false, false },
-                                    { false, false, false, false }
-                              };
 
     private int playerRow = 0;
     private int playerCol = 0;
     private int playerHealth = 10;
     private int enemyDamage = 1;
     private int itemHealAmount = 2;
+    private bool isBlocked = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        OutputTileInformation();
         SetPlayerPosition(0, 0);
+        OutputTileName();
+        Look();
+        dungeon[playerRow, playerCol].isTileVisited = true;
+
         Debug.Log("\n");
     }
 
     // Update is called once per frame
     void Update()
     {
-        bool wasKeyPressed = HandleInput(out int newRow, out int newCol);
+        bool wasKeyPressed = HandleInput(out int newRow, out int newCol, out bool isDescriptionKeyPressed);
 
         if (!wasKeyPressed)
         {
@@ -88,22 +82,41 @@ public class TextBasedAdventure : MonoBehaviour
 
         SetPlayerPosition(newRow, newCol);
 
-        if (!isRoomVisited[playerRow, playerCol])
+        if (dungeon[playerRow, playerCol].Type == TileType.Teleporter)
         {
-            OutputTileInformation();
-            isRoomVisited[playerRow, playerCol] = true;
+            (playerRow, playerCol) = dungeon[playerRow, playerCol].TeleportDestinationCoordinate.Value;
+        }
+
+        OutputTileName();
+
+        if (isDescriptionKeyPressed)
+        {
+            Look();
+        }
+
+        if (!dungeon[playerRow, playerCol].isTileVisited)
+        {
+            Look();
+            dungeon[playerRow, playerCol].isTileVisited = true;
         }
 
         Debug.Log("\n");
     }
 
     /// <summary>
-    /// Gives info about the current tile the player is in.
+    /// Gives name of the current tile the player is in.
     /// </summary>
-    private void OutputTileInformation()
+    private void OutputTileName()
     {
-        Debug.Log("You are in: " + tileNames[playerRow, playerCol]);
-        Debug.Log(tileDescriptions[playerRow, playerCol]);
+        Debug.Log($"You are {(isBlocked ? "still ": "")}in: " + dungeon[playerRow, playerCol].Name);
+    }
+
+    /// <summary>
+    /// Gives description of the current tile the player is in.
+    /// </summary>
+    private void Look()
+    {
+        Debug.Log(dungeon[playerRow, playerCol].Description);
     }
 
     private void EncounterEnemy()
@@ -140,26 +153,33 @@ public class TextBasedAdventure : MonoBehaviour
     /// <param name="newCol"></param>
     private void SetPlayerPosition(int newRow, int newCol)
     {
-        if (CheckIfNewPositionInTileBounds(newRow, newCol))
+        if (CheckIfPositionInValidTile(newRow, newCol))
         {
             playerRow = newRow;
             playerCol = newCol;
         }
         else
         {
-            Debug.Log("Can't go that way");
+            Debug.Log((isBlocked ? "The way is Blocked. ": "") + "Can't go that way.");
         }
     }
 
     /// <summary>
-    /// Determine if the new row and column position are within the bounds of the tiles or if the path is not blocked
+    /// Determine if the row and column position are within the bounds of the tiles or if the path is not blocked
     /// </summary>
-    /// <param name="newRow">new row position</param>
-    /// <param name="newCol">new column position</param>
-    /// <returns>True if it is within the bounds, false if not</returns>
-    private bool CheckIfNewPositionInTileBounds(int newRow, int newCol)
+    /// <param name="row"> row position</param>
+    /// <param name="col"> column position</param>
+    /// <returns>True if it is within valid bounds, false if not</returns>
+    private bool CheckIfPositionInValidTile(int row, int col)
     {
-        return (newRow >= 0 && newRow < tileNames.GetLength(0)) && (newCol >= 0 && newCol < tileNames.GetLength(1) && tileTypes[newRow, newCol] != TileType.Blockade);
+        if ((row >= 0 && row < dungeon.GetLength(0)) && (col >= 0 && col < dungeon.GetLength(1)))
+        {
+            isBlocked = dungeon[row, col].Type == TileType.Blockade;
+
+            return !isBlocked;
+        }
+
+        return false;
     }
 
     /// <summary>
@@ -168,11 +188,13 @@ public class TextBasedAdventure : MonoBehaviour
     /// <param name="newRow">new row position</param>
     /// <param name="newCol">new column position</param>
     /// <returns>True if an input was pressed, false if not</returns>
-    private bool HandleInput(out int newRow, out int newCol)
+    private bool HandleInput(out int newRow, out int newCol, out bool isDescriptionKeyPressed)
     {
         bool hasPressedKey = true;
         newRow = playerRow;
         newCol = playerCol;
+
+        isDescriptionKeyPressed = false;
         
         if (Input.GetKeyDown(KeyCode.D))
         {
@@ -196,8 +218,8 @@ public class TextBasedAdventure : MonoBehaviour
         }
         else if (Input.GetKeyDown(KeyCode.H))
         {
-            Debug.Log($"You pressed {KeyCode.H}.");
-            OutputTileInformation();
+            Debug.Log($"You pressed {KeyCode.H}");
+            isDescriptionKeyPressed = true;
         }
         else
         {
