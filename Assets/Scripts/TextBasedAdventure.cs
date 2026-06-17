@@ -82,8 +82,10 @@ public class TextBasedAdventure : MonoBehaviour
 
         SetPlayerPosition(newRow, newCol);
 
-        if (dungeon[playerRow, playerCol].Type == TileType.Teleporter)
+        if (dungeon[playerRow, playerCol].Type == TileType.Teleporter && dungeon[playerRow, playerCol].TeleportDestinationCoordinate != null)
         {
+            Debug.Log($"You have activated a Teleporter in {dungeon[playerRow, playerCol].Name}. Teleporting...");
+            // when tile position is invalid (out of bound or blocked), the player will simply teleport back to the other end
             (playerRow, playerCol) = dungeon[playerRow, playerCol].TeleportDestinationCoordinate.Value;
         }
 
@@ -108,7 +110,7 @@ public class TextBasedAdventure : MonoBehaviour
     /// </summary>
     private void OutputTileName()
     {
-        Debug.Log($"You are {(isBlocked ? "still ": "")}in: " + dungeon[playerRow, playerCol].Name);
+        Debug.Log($"You are in: " + dungeon[playerRow, playerCol].Name);
     }
 
     /// <summary>
