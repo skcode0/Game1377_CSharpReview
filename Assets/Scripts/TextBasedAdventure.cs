@@ -121,33 +121,6 @@ public class TextBasedAdventure : MonoBehaviour
         Debug.Log(dungeon[playerRow, playerCol].Description);
     }
 
-    private void EncounterEnemy()
-    {
-        PlayerTakeDamage(enemyDamage);
-    }
-    
-    private void ItemPickup()
-    {
-        PlayerHeal(itemHealAmount);
-    }
-
-    private void PlayerHeal(int heal)
-    {
-        playerHealth += heal;
-        Debug.Log("You get healed. Your health is now " + playerHealth);
-    }
-
-    private void PlayerTakeDamage(int damage)
-    {
-        playerHealth -= damage;
-        Debug.Log("You get hit. Your health is now " + playerHealth);
-        if (playerHealth <= 0)
-        {
-            playerHealth = 0;
-            Debug.Log("You are dead");
-        }
-    }
-
     /// <summary>
     /// Sets the player position to a new row and column position
     /// </summary>
@@ -229,13 +202,5 @@ public class TextBasedAdventure : MonoBehaviour
         }
         return hasPressedKey;
     }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name=""></param>
-    /// <param name=""></param>
-    /// <returns></returns>
-    
 
 }
