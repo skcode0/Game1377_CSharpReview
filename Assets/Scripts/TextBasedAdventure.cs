@@ -54,9 +54,6 @@ public class TextBasedAdventure : MonoBehaviour
 
     private int playerRow = 0;
     private int playerCol = 0;
-    private int playerHealth = 10;
-    private int enemyDamage = 1;
-    private int itemHealAmount = 2;
     private bool isBlocked = false;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -82,7 +79,8 @@ public class TextBasedAdventure : MonoBehaviour
 
         SetPlayerPosition(newRow, newCol);
 
-        if (dungeon[playerRow, playerCol].Type == TileType.Teleporter && dungeon[playerRow, playerCol].TeleportDestinationCoordinate != null)
+        // Teleport player
+        if (!isDescriptionKeyPressed && dungeon[playerRow, playerCol].Type == TileType.Teleporter && dungeon[playerRow, playerCol].TeleportDestinationCoordinate != null)
         {
             Debug.Log($"You have activated a Teleporter in {dungeon[playerRow, playerCol].Name}. Teleporting...");
             // when tile position is invalid (out of bound or blocked), the player will simply teleport back to the other end
@@ -91,15 +89,14 @@ public class TextBasedAdventure : MonoBehaviour
 
         OutputTileName();
 
-        if (isDescriptionKeyPressed)
-        {
-            Look();
-        }
-
-        if (!dungeon[playerRow, playerCol].isTileVisited)
+        if (!dungeon[playerRow, playerCol].isTileVisited || isDescriptionKeyPressed)
         {
             Look();
             dungeon[playerRow, playerCol].isTileVisited = true;
+        }
+        else if (isDescriptionKeyPressed)
+        {
+            Look();
         }
 
         Debug.Log("\n");
@@ -170,36 +167,43 @@ public class TextBasedAdventure : MonoBehaviour
         newCol = playerCol;
 
         isDescriptionKeyPressed = false;
-        
-        if (Input.GetKeyDown(KeyCode.D))
+
+        if (Input.GetButtonDown("Horizontal"))
         {
-            Debug.Log("You pressed " + KeyCode.D);
-            newCol++;
+            if (Input.GetAxisRaw("Horizontal") > 0)
+            {
+                Debug.Log("You pressed Right.");
+                newCol++;
+            }
+            else if (Input.GetAxisRaw("Horizontal") < 0)
+            {
+                Debug.Log("You pressed Left.");
+                newCol--;
+            }
         }
-        else if (Input.GetKeyDown(KeyCode.A))
+        else if (Input.GetButtonDown("Vertical"))
         {
-            Debug.Log("You pressed " + KeyCode.A);
-            newCol--;
+            if (Input.GetAxisRaw("Vertical") > 0)
+            {
+                Debug.Log("You pressed Up.");
+                newRow--;
+            }
+            else if (Input.GetAxisRaw("Vertical") < 0)
+            {
+                Debug.Log("You pressed Down.");
+                newRow++;
+            }
         }
-        else if (Input.GetKeyDown(KeyCode.W))
+        else if (Input.GetButtonDown("Help")) // h key
         {
-            Debug.Log("You pressed " + KeyCode.W);
-            newRow--;
-        }
-        else if (Input.GetKeyDown(KeyCode.S))
-        {
-            Debug.Log("You pressed " + KeyCode.S);
-            newRow++;
-        }
-        else if (Input.GetKeyDown(KeyCode.H))
-        {
-            Debug.Log($"You pressed {KeyCode.H}");
+            Debug.Log("You pressed Help.");
             isDescriptionKeyPressed = true;
         }
         else
         {
             hasPressedKey = false;
         }
+
         return hasPressedKey;
     }
 
